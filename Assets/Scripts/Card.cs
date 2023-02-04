@@ -29,7 +29,7 @@ public class Card : MonoBehaviour
     /// Flipping the card by y-axis depending on initial rotation state. 
     /// </summary>
     public void Flip() {
-        rt.DORotate(new Vector3(0f, rt.rotation.y == 0 ? flipAngle : 0f, 0f), 1f).OnUpdate(() => {
+        rt.DORotate(new Vector3(0f, rt.rotation.y == 0 ? flipAngle : 0f, 0f), 0.5f).OnUpdate(() => {
             if (Math.Round(rt.rotation.y, 1) == spriteChangeEdge) {
                 if (isShown) {
                     cardImage.sprite = backView;

@@ -386,7 +386,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: test request
+  m_text: AllAtOnce
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -642,7 +642,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Flip cards
+  m_text: OneByOne
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -895,9 +895,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1114466703}
-        m_TargetAssemblyTypeName: Card, Assembly-CSharp
-        m_MethodName: Flip
+      - m_Target: {fileID: 1430401940}
+        m_TargetAssemblyTypeName: CardsController, Assembly-CSharp
+        m_MethodName: OneByOne
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1570,7 +1570,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1430401940}
         m_TargetAssemblyTypeName: CardsController, Assembly-CSharp
-        m_MethodName: Call
+        m_MethodName: AllAtOnce
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

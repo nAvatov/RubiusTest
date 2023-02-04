@@ -8,13 +8,17 @@ public class CardsController : MonoBehaviour
     [SerializeField] List<Card> cards;
     [SerializeField] Sprite defaultSprite; // Incase something wrong happened with download
     private string urlPattern = "http://picsum.photos/200";
+    private float tweenFlipDelay = 0.5f;
     private bool cardsAreShown = false;
 
     #region Public Methods
 
-    public void Call() {
-        StopAllCoroutines();
+    public void OneByOne() {
         StartCoroutine(ShowOneByOne());
+    }
+
+    public void AllAtOnce() {
+        StartCoroutine(ShowAllAtOnce());
     }
         
     #endregion
@@ -22,13 +26,27 @@ public class CardsController : MonoBehaviour
     #region Private Methods
 
     private IEnumerator ShowOneByOne() {
-        HideAllCards();
+        StartCoroutine(HideAllCards());
 
+        yield return new WaitForEndOfFrame();
         yield return new WaitUntil(() => cardsAreShown == false);
 
         StartCoroutine(ShowCards(null, (Card loadedCard) => {
             loadedCard.Flip();
         }));
+    }
+
+    private IEnumerator ShowAllAtOnce() {
+        StartCoroutine(HideAllCards());
+
+        yield return new WaitForEndOfFrame();
+        yield return new WaitUntil(() => cardsAreShown == false);
+
+        StartCoroutine(ShowCards(() => {
+            foreach(Card card in cards) {
+                card.Flip();
+            }
+        }, null));
     }
 
     private IEnumerator ShowCards(System.Action AllAtOnce = null, System.Action<Card> OneByOne = null) {
@@ -40,6 +58,7 @@ public class CardsController : MonoBehaviour
             yield return new WaitUntil( () => card.CharImageSprite != null);
             if (OneByOne != null) OneByOne(card);
         }
+        
         cardsAreShown = true;
 
         if (AllAtOnce != null) AllAtOnce();
@@ -95,11 +114,13 @@ public class CardsController : MonoBehaviour
         return true;
     }
 
-    private void HideAllCards() {
+    private IEnumerator HideAllCards() {
         if (cardsAreShown) {
             foreach(Card card in cards) {
-                card.Flip();
+                card.Flip(); // Tweens are taking some time too! Beware of using coroutines with them..
             }
+
+            yield return new WaitForSeconds(tweenFlipDelay);
             cardsAreShown = false;
         }
     }
