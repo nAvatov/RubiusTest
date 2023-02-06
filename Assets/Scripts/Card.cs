@@ -23,6 +23,16 @@ public class Card : MonoBehaviour
         }
     }
 
+    public bool IsShown {
+        set {
+            isShown = value;
+        }
+
+        get {
+            return isShown;
+        }
+    }
+
     #region Public Methods
 
     /// <summary>
