@@ -39,6 +39,10 @@ public class RequestHandler
     {
         var response = await req.SendWebRequest();
 
+        if (response.responseCode != 200L) {
+            return null;
+        }
+
         return response.downloadHandler.data;
     }
 }

@@ -1,69 +1,73 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Networking;
-using System.Net.Http;
 using UnityEngine;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using UnityEngine.UI;
 
 public class CardsController : MonoBehaviour
 {
+    [SerializeField] Button loadButton;
+    [SerializeField] TMPro.TMP_Dropdown dropdownList;
     [SerializeField] List<Card> cards;
     [SerializeField] Sprite defaultSprite; // Incase something wrong happened with download
     private string urlPattern = "http://picsum.photos/200";
     private float tweenFlipDelay = 0.5f;
     private bool cardsAreShown = false;
+    private bool CardsAreShown {
+        set {
+            cardsAreShown = value;
+
+            if (value) {
+                loadButton.interactable = true;
+            }
+        }
+    }
     private UniTask[] tasks;
 
     #region Public Methods
 
-    public void OneByOne() {
-        StartCoroutine(ShowOneByOne());
-    }
-
-    public void AllAtOnce() {
-        StartCoroutine(ShowAllAtOnce());
-    }
-
-    public void AsReady() {
-        StartCoroutine(ShowAsReady());
+    public void Load() {
+        loadButton.interactable = false;
+        switch(dropdownList.captionText.text) {
+            case "OneByOne" : {
+                StartCoroutine(Show(() => {
+                    StartCoroutine(ShowCards(
+                        null, 
+                        (Card loadedCard) => { loadedCard.Flip(); }
+                    ));
+                }));
+                break;
+            }
+            case "AllAtOnce" : {
+                StartCoroutine(Show(() => {
+                    StartCoroutine(ShowCards(
+                        () => { foreach(Card card in cards) { card.Flip(); } }, 
+                        null
+                    ));
+                }));
+                break;
+            }
+            case "EachAsReady" : {
+                StartCoroutine(Show(() => {
+                    ShowCardsAsync();
+                }));
+                break;
+            }
+        }
     }
         
     #endregion
 
     #region Private Methods
 
-    private IEnumerator ShowOneByOne() {
+    private IEnumerator Show(System.Action callback) {
         StartCoroutine(HideAllCards());
 
         yield return new WaitForEndOfFrame();
         yield return new WaitUntil(() => cardsAreShown == false);
 
-        StartCoroutine(ShowCards(null, (Card loadedCard) => {
-            loadedCard.Flip();
-        }));
-    }
-
-    private IEnumerator ShowAllAtOnce() {
-        StartCoroutine(HideAllCards());
-
-        yield return new WaitForEndOfFrame();
-        yield return new WaitUntil(() => cardsAreShown == false);
-
-        StartCoroutine(ShowCards(() => {
-            foreach(Card card in cards) {
-                card.Flip();
-            }
-        }, null));
-    }
-
-    private IEnumerator ShowAsReady() {
-        StartCoroutine(HideAllCards());
-
-        yield return new WaitForEndOfFrame();
-        yield return new WaitUntil(() => cardsAreShown == false);
-
-        ShowCardsAsync();
+        callback();
     }
 
     /// <summary>
@@ -78,7 +82,6 @@ public class CardsController : MonoBehaviour
         foreach(Card card in cards) {
             StartCoroutine(RequestHandler.SendRequest(urlPattern, (UnityWebRequest response) => {
                 if (response != null) { // If request is fine and response code is 200 OK
-                    Debug.Log(response.downloadHandler.data.Length);
                     createdSprite = ResourceCreator.CreateSpriteFrom(ResourceCreator.GenerateTextureFrom(response.downloadHandler.data));
                     card.CharImageSprite = createdSprite == null ? defaultSprite : createdSprite;
                 } else { // If something went wrong with server request or response
@@ -90,10 +93,10 @@ public class CardsController : MonoBehaviour
             if (OneByOne != null) OneByOne(card);
         }
         
-        cardsAreShown = true;
-
         if (AllAtOnce != null) AllAtOnce();
-        yield break;
+        
+        yield return new WaitForSeconds(tweenFlipDelay);
+        CardsAreShown = true;
     }
 
 
@@ -109,7 +112,8 @@ public class CardsController : MonoBehaviour
         }
 
         await UniTask.WhenAll(tasks);
-        cardsAreShown = true; // flag is set to true for hiding cards process 
+        await UniTask.Delay(System.TimeSpan.FromSeconds(tweenFlipDelay));
+        CardsAreShown = true; // flag is set to true for hiding cards process 
     }
 
     /// <summary>
@@ -118,7 +122,7 @@ public class CardsController : MonoBehaviour
     /// <param name="card"></param>
     /// <returns></returns>
     private async UniTask GetSpriteForCardAsync(Card card) {
-        Sprite createdSprite = defaultSprite;
+        Sprite createdSprite;
         byte[] bytes;
 
         var task = RequestHandler.GetBytesAsync(UnityWebRequest.Get(urlPattern)); // Setting task for byte[] download
@@ -126,7 +130,7 @@ public class CardsController : MonoBehaviour
         bytes = await task; 
         createdSprite = ResourceCreator.CreateSpriteFrom(ResourceCreator.GenerateTextureFrom(bytes));
 
-        card.CharImageSprite = createdSprite;
+        card.CharImageSprite = createdSprite == null ? defaultSprite : createdSprite;
         card.Flip();
     }
 
@@ -141,7 +145,7 @@ public class CardsController : MonoBehaviour
             }
 
             yield return new WaitForSeconds(tweenFlipDelay);
-            cardsAreShown = false;
+            CardsAreShown = false;
         }
     }
         
