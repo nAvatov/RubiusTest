@@ -1,219 +1,136 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.Networking;
 using UnityEngine;
-using Cysharp.Threading.Tasks;
-using System.Threading;
 using UnityEngine.UI;
 
 public class CardsController : MonoBehaviour
 {
+    const string urlPattern = "http://picsum.photos/200";
+    const float tweenFlipDelay = 0.5f;
     [SerializeField] Button loadButton;
     [SerializeField] Button cancelButton;
     [SerializeField] TMPro.TMP_Dropdown dropdownList;
     [SerializeField] List<Card> cards;
-    [SerializeField] Sprite defaultSprite; // Incase something wrong happened with download
-    private string urlPattern = "http://picsum.photos/200";
-    private float tweenFlipDelay = 0.5f;
-    private bool cardsAreShown = false;
-    private bool interruptFlag = false;
-    private bool CardsAreShown {
+
+    bool cardsAreHidden = true;
+    int amountOfUsedCards = 0;
+
+    public bool CardsAreHidden {
+        get {
+            return cardsAreHidden;
+        }
         set {
-            cardsAreShown = value;
-            
-            loadButton.interactable = true;
-            cancelButton.interactable = false;
+            cardsAreHidden = value;
+
+            HandleControlButtons(true, false);
+            amountOfUsedCards = 0;
         }
     }
-    private UniTask[] tasks;
-    private CancellationTokenSource cancellationTokenSource;
 
     #region Public Methods
 
     public void Load() {
-        loadButton.interactable = false;
-        switch(dropdownList.captionText.text) {
-            case "OneByOne" : {
-                ShowAsync(() => {
-                    StartCoroutine(ShowCards(
-                        null, 
-                        (Card loadedCard) => { loadedCard.Flip(); }
-                    ));
-                });
-                break;
-            }
-            case "AllAtOnce" : {
-                ShowAsync(() => {
-                    StartCoroutine(ShowCards(
-                        () => { foreach(Card card in cards) { card.Flip(); } }, 
-                        null
-                    ));
-                });
-                break;
-            }
-            case "EachAsReady" : {
-                ShowAsync(() => {
-                    ShowCardsAsync();
-                });
-                break;
-            }
-        }
+        StartCoroutine(ShowCardsInSpecificType());
     }
 
     public void Cancel() {
-        interruptFlag = true;
-        
-        if (dropdownList.captionText.text == "EachAsReady") {
-            StartCoroutine(Interrupt());
-        }
+        StopAllCoroutines();
+
+        StartCoroutine(HideCards());
     }
         
     #endregion
 
     #region Private Methods
 
-    /// <summary>
-    /// Async show cards method based on different callbacks (via view types)
-    /// </summary>
-    /// <param name="callback"></param>
-    /// <returns></returns>
-    private async void ShowAsync(System.Action callback) {
-        await HideAllCardsAsync();
-        
-        callback();
-        cancelButton.interactable = true;
-    }
+    private IEnumerator ShowCardsInSpecificType() {
+        StartCoroutine(HideCards());
 
-    /// <summary>
-    /// Interaption coroutine for async view type (EachAsReady)
-    /// </summary>
-    /// <returns></returns>
-    private IEnumerator Interrupt() {
-        cancellationTokenSource.Cancel();
-        yield return new WaitForSeconds(tweenFlipDelay);
-        StartCoroutine(RefreshCards());
-    }
+        yield return new WaitUntil(() => CardsAreHidden == true);
 
-    /// <summary>
-    /// Method for donwloading resources for cards sprites. Can handle two types of card flipping by pointing direct callback in params.
-    /// </summary>
-    /// <param name="AllAtOnce"></param>
-    /// <param name="OneByOne"></param>
-    /// <returns></returns>
-    private IEnumerator ShowCards(System.Action AllAtOnce = null, System.Action<Card> OneByOne = null) {
-        Sprite createdSprite;
-        
-        foreach(Card card in cards) {
-            if (interruptFlag) {
-                yield return new WaitForSeconds(tweenFlipDelay);
-                StartCoroutine(RefreshCards());
-                yield break;
+        HandleControlButtons(false, true);
+
+        switch(dropdownList.captionText.text.ToLower()) {
+            case "onebyone" : { 
+                StartCoroutine(OneByOne.ShowCards(cards, urlPattern, () => { CardsAreHidden = false; }));
+                break;
             }
+            case "allatonce" : { 
+                StartCoroutine(AllAtOnce.ShowCards(cards, urlPattern, () => { CardsAreHidden = false; }));
+                break;
+            }
+            case "eachasready" : {
+                StartCoroutine(EachAsReady.ShowCards(cards, urlPattern, () => {
+                    if (++amountOfUsedCards == cards.Count) {
+                        CardsAreHidden = false;
+                    }
+                }));
+                break;
+            }
+        }
+    }
 
-            StartCoroutine(RequestHandler.SendRequest(urlPattern, (UnityWebRequest response) => {
-                if (response != null) { // If request is fine and response code is 200 OK
-                    createdSprite = ResourceCreator.CreateSpriteFrom(ResourceCreator.GenerateTextureFrom(response.downloadHandler.data));
-                    card.CharImageSprite = createdSprite == null ? defaultSprite : createdSprite;
-                } else { // If something went wrong with server request or response
-                    card.CharImageSprite = defaultSprite;
-                }
-            }));
+    private IEnumerator HideCards(bool beggining = false) {
+        if (!CardsAreHidden) { // Condition becomes true when all cards are shown
+            HandleControlButtons(false, false);
             
-            yield return new WaitUntil( () => card.CharImageSprite != null);
-
-            if (OneByOne != null) OneByOne(card);
-        }
-        
-        if (AllAtOnce != null) AllAtOnce();
-        
-        yield return new WaitForSeconds(tweenFlipDelay);
-        CardsAreShown = true;
-    }
-
-
-    /// <summary>
-    /// This method creates amount of tasks equal to cards amount. After all tasks is done cardsAreShown flag is changed.
-    /// </summary>
-    /// <returns></returns>
-    private async void ShowCardsAsync() {
-        cancellationTokenSource = new CancellationTokenSource();
-        tasks = new UniTask[cards.Count];
-
-        for(int i = 0; i < cards.Count; i++) {
-            tasks[i] = GetSpriteForCardAsync(cards[i]);
-            
-        }
-
-        await UniTask.WhenAll(tasks);
-        await UniTask.Delay(System.TimeSpan.FromSeconds(tweenFlipDelay));        
-
-        if (!interruptFlag) {
-            CardsAreShown = true; // flag is set to true for hiding cards process 
-        }
-        cancellationTokenSource.Dispose();
-    }
-
-    /// <summary>
-    /// Method for particular card async byts download, card charImage sprite inits and card flips after download is succeed.
-    /// </summary>
-    /// <param name="card"></param>
-    /// <returns></returns>
-    private async UniTask GetSpriteForCardAsync(Card card) {
-
-        Sprite createdSprite;
-        byte[] bytes;
-
-        var task = RequestHandler.GetBytesAsync(UnityWebRequest.Get(urlPattern)); // Setting task for byte[] download
-
-        bytes = await task; 
-
-        createdSprite = ResourceCreator.CreateSpriteFrom(ResourceCreator.GenerateTextureFrom(bytes));
-
-        card.CharImageSprite = createdSprite == null ? defaultSprite : createdSprite;
-
-        // uncomm if loading too fast
-        //await UniTask.Delay(1000); 
-
-        if (cancellationTokenSource.Token.IsCancellationRequested) {
-            interruptFlag = true;
-            return;
-        }
-
-        card.Flip();
-    }
-
-    /// <summary>
-    /// Method for refreshing cards state - flipping them all over.
-    /// </summary>
-    /// <returns></returns>
-    private async UniTask HideAllCardsAsync() {
-        if (cardsAreShown) {
             foreach(Card card in cards) {
-                card.Flip(); // Tweens are taking some time too! Beware of using coroutines with them..
+                card.Flip(() => {
+                    amountOfUsedCards++;
+                });
             }
 
-            await UniTask.Delay(System.TimeSpan.FromSeconds(tweenFlipDelay));
+            yield return new WaitUntil(() => amountOfUsedCards == cards.Count);
+            CardsAreHidden = true;
+        }
+        else { // When (part of || none of) cards are shown
+            int  calculatedAmount = GetShownCardsAmount();
+            
+            if (calculatedAmount != 0) {
+                int actualAmount = 0;
+                foreach(Card card in cards) {
+                    if (card.IsShown) {
+                        Debug.Log("isShown");
+                        card.Flip(() => {
+                            actualAmount++;
+                        });
+                    }
+                }
+
+                yield return new WaitUntil(() => actualAmount == calculatedAmount);
+                CardsAreHidden = true;
+            }
         }
     }
 
-    /// <summary>
-    /// Coroutine for cards refreshing after load process interruption
-    /// </summary>
-    /// <returns></returns>
-    private IEnumerator RefreshCards() {
-        loadButton.interactable = false;
-        foreach(Card card in cards) {
+    private int GetShownCardsAmount() {
+        int a = 0;
+
+        foreach (Card card in cards) {
             if (card.IsShown) {
-                card.CharImageSprite = null;
-                card.Flip();
+                a++;
             }
         }
-        yield return new WaitForSeconds(tweenFlipDelay);
-        CardsAreShown = false;
-        interruptFlag = false;
+
+        return a;
     }
-        
+
+    private void HandleControlButtons(bool loadButtonState, bool cancelButtonState) {
+        loadButton.interactable = loadButtonState;
+        cancelButton.interactable = cancelButtonState;
+    }
+
     #endregion
+}
+
+public interface ICardsDisplayer {
+    public static IEnumerator ShowCards(List<Card> cards, string url, System.Action callback) {
+        yield break;
+    }
+
+    public static void Interrupt() {
+
+    }
 }
 
 

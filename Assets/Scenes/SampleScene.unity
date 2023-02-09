@@ -827,7 +827,6 @@ MonoBehaviour:
   - {fileID: 745239750}
   - {fileID: 1797133826}
   - {fileID: 372379162}
-  defaultSprite: {fileID: 21300000, guid: f7ab1edfd19cb1b408cfb9d1b5c359c3, type: 3}
 --- !u!1001 &745239748
 PrefabInstance:
   m_ObjectHideFlags: 0
