@@ -137,9 +137,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardImage: {fileID: 6580565885607394186}
   charImage: {fileID: 6580565884577167502}
+  defaultSprite: {fileID: 21300000, guid: f7ab1edfd19cb1b408cfb9d1b5c359c3, type: 3}
   frontView: {fileID: 21300000, guid: aa1d32629bca4944a9492f788885bc6d, type: 3}
   backView: {fileID: 21300000, guid: 776cea45a4915084d8155f9fb0e42668, type: 3}
   rt: {fileID: 6580565885607394187}
+  flipDuration: 0.5
 --- !u!1 &6580565884716051766
 GameObject:
   m_ObjectHideFlags: 0

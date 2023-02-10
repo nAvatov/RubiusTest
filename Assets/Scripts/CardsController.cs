@@ -5,16 +5,13 @@ using UnityEngine.UI;
 
 public class CardsController : MonoBehaviour
 {
-    const string urlPattern = "http://picsum.photos/200";
-    const float tweenFlipDelay = 0.5f;
-    [SerializeField] Button loadButton;
-    [SerializeField] Button cancelButton;
-    [SerializeField] TMPro.TMP_Dropdown dropdownList;
-    [SerializeField] List<Card> cards;
-
-    bool cardsAreHidden = true;
-    int amountOfUsedCards = 0;
-
+    private const string urlPattern = "http://picsum.photos/200";
+    [SerializeField] private Button loadButton;
+    [SerializeField] private Button cancelButton;
+    [SerializeField] private TMPro.TMP_Dropdown dropdownList;
+    [SerializeField] private List<Card> cards;
+    private bool cardsAreHidden = true;
+    private int amountOfUsedCards = 0;
     public bool CardsAreHidden {
         get {
             return cardsAreHidden;
@@ -30,12 +27,12 @@ public class CardsController : MonoBehaviour
     #region Public Methods
 
     public void Load() {
+        StopAllCoroutines();
         StartCoroutine(ShowCardsInSpecificType());
     }
 
     public void Cancel() {
         StopAllCoroutines();
-
         StartCoroutine(HideCards());
     }
         
@@ -43,6 +40,10 @@ public class CardsController : MonoBehaviour
 
     #region Private Methods
 
+    /// <summary>
+    /// Coroutine for hiding cards and executing specific view type based on dropdownList current variant.
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator ShowCardsInSpecificType() {
         StartCoroutine(HideCards());
 
@@ -70,7 +71,11 @@ public class CardsController : MonoBehaviour
         }
     }
 
-    private IEnumerator HideCards(bool beggining = false) {
+
+    /// <summary>
+    /// Coroutine for hiding cards based on CardsAreHidden flag and *calculatedAmount value (*How much cards are shown at the time of this function call).
+    /// </summary>
+    private IEnumerator HideCards() {
         if (!CardsAreHidden) { // Condition becomes true when all cards are shown
             HandleControlButtons(false, false);
             
@@ -89,8 +94,8 @@ public class CardsController : MonoBehaviour
             if (calculatedAmount != 0) {
                 int actualAmount = 0;
                 foreach(Card card in cards) {
+                    
                     if (card.IsShown) {
-                        Debug.Log("isShown");
                         card.Flip(() => {
                             actualAmount++;
                         });
@@ -99,14 +104,22 @@ public class CardsController : MonoBehaviour
 
                 yield return new WaitUntil(() => actualAmount == calculatedAmount);
                 CardsAreHidden = true;
+            } else {
+                HandleControlButtons(true, false);
             }
         }
     }
 
+    /// <summary>
+    /// This method calculates and retunrns amount of shown cards whose states are repaired.
+    /// </summary>
+    /// <returns></returns>
     private int GetShownCardsAmount() {
         int a = 0;
 
         foreach (Card card in cards) {
+            card.RepairState();
+            
             if (card.IsShown) {
                 a++;
             }
@@ -126,10 +139,6 @@ public class CardsController : MonoBehaviour
 public interface ICardsDisplayer {
     public static IEnumerator ShowCards(List<Card> cards, string url, System.Action callback) {
         yield break;
-    }
-
-    public static void Interrupt() {
-
     }
 }
 

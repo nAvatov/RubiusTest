@@ -3,7 +3,7 @@ using UnityEngine;
 public class ResourceCreator
 {
     /// <summary>
-    /// Method for generating Texture2D object by passing raw byte[] array (representing picture by default)
+    /// Method for generating Texture2D object by passing raw byte[] array (representing picture by default).
     /// </summary>
     /// <param name="bytes"></param>
     /// <returns></returns>
@@ -26,7 +26,7 @@ public class ResourceCreator
     }
 
     /// <summary>
-    /// Method for creating sprite by given Texture2D
+    /// Method for creating sprite by given Texture2D.
     /// </summary>
     /// <param name="texture"></param>
     /// <returns></returns>
