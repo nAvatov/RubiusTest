@@ -10,22 +10,22 @@ public interface ICardsDisplayer {
 }
 
 public class CardsController : MonoBehaviour {
-    private const string urlPattern = "http://picsum.photos/200";
-    [SerializeField] private Button loadButton;
-    [SerializeField] private Button cancelButton;
-    [SerializeField] private TMPro.TMP_Dropdown dropdownList;
-    [SerializeField] private List<Card> cards;
-    private bool cardsAreHidden = true;
-    private int amountOfUsedCards = 0;
+    private const string URL = "http://picsum.photos/200";
+    [SerializeField] private Button _loadButton;
+    [SerializeField] private Button _interruptButton;
+    [SerializeField] private TMPro.TMP_Dropdown _dropdownList;
+    [SerializeField] private List<Card> _cards;
+    private bool _cardsAreHidden = true;
+    private int _amountOfUsedCards = 0;
     public bool CardsAreHidden {
         get {
-            return cardsAreHidden;
+            return _cardsAreHidden;
         }
         set {
-            cardsAreHidden = value;
+            _cardsAreHidden = value;
 
             HandleControlButtons(true, false);
-            amountOfUsedCards = 0;
+            _amountOfUsedCards = 0;
         }
     }
 
@@ -41,24 +41,25 @@ public class CardsController : MonoBehaviour {
 
     // Coroutine for hiding cards and executing specific view type based on dropdownList current variant.
     private IEnumerator ShowCardsInSpecificType() {
-        StartCoroutine(HideCards());
+        if (!CardsAreHidden) {
+            yield return HideCards();
+        }
 
-        yield return new WaitUntil(() => CardsAreHidden == true);
 
         HandleControlButtons(false, true);
 
-        switch(dropdownList.captionText.text.ToLower()) {
+        switch(_dropdownList.captionText.text.ToLower()) {
             case "onebyone" : { 
-                StartCoroutine(OneByOne.ShowCards(cards, urlPattern, () => { CardsAreHidden = false; }));
+                StartCoroutine(OneByOne.ShowCards(_cards, URL, () => { CardsAreHidden = false; }));
                 break;
             }
             case "allatonce" : { 
-                StartCoroutine(AllAtOnce.ShowCards(cards, urlPattern, () => { CardsAreHidden = false; }));
+                StartCoroutine(AllAtOnce.ShowCards(_cards, URL, () => { CardsAreHidden = false; }));
                 break;
             }
             case "eachasready" : {
-                StartCoroutine(EachAsReady.ShowCards(cards, urlPattern, () => {
-                    if (++amountOfUsedCards == cards.Count) {
+                StartCoroutine(EachAsReady.ShowCards(_cards, URL, () => {
+                    if (++_amountOfUsedCards == _cards.Count) {
                         CardsAreHidden = false;
                     }
                 }));
@@ -74,23 +75,22 @@ public class CardsController : MonoBehaviour {
         if (!CardsAreHidden) {
             HandleControlButtons(false, false);
             
-            foreach(Card card in cards) {
+            foreach(Card card in _cards) {
                 card.Flip(() => {
-                    amountOfUsedCards++;
+                    _amountOfUsedCards++;
                 });
             }
 
-            yield return new WaitUntil(() => amountOfUsedCards == cards.Count);
+            yield return new WaitUntil(() => _amountOfUsedCards == _cards.Count);
             CardsAreHidden = true;
         }
         // When (part of || none of) cards are shown
         else {
-            int  calculatedAmount = GetShownCardsAmount();
+            int calculatedAmount = GetShownCardsAmount();
             
             if (calculatedAmount != 0) {
                 int actualAmount = 0;
-                foreach(Card card in cards) {
-                    
+                foreach(Card card in _cards) {
                     if (card.IsShown) {
                         card.Flip(() => {
                             actualAmount++;
@@ -110,7 +110,7 @@ public class CardsController : MonoBehaviour {
     private int GetShownCardsAmount() {
         int a = 0;
 
-        foreach (Card card in cards) {
+        foreach (Card card in _cards) {
             card.RepairState();
             
             if (card.IsShown) {
@@ -122,7 +122,7 @@ public class CardsController : MonoBehaviour {
     }
 
     private void HandleControlButtons(bool loadButtonState, bool cancelButtonState) {
-        loadButton.interactable = loadButtonState;
-        cancelButton.interactable = cancelButtonState;
+        _loadButton.interactable = loadButtonState;
+        _interruptButton.interactable = cancelButtonState;
     }
 }

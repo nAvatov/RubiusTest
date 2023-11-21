@@ -6,13 +6,13 @@ using DG.Tweening;
 public class Card : MonoBehaviour
 {
     private const float flipAngle = 180f;
-    private const double spriteChangeEdge = 90d;
+    private const double spriteChangeEdge = 90f;
     [SerializeField] private Image _cardImage, _charImage;
     [SerializeField] private Sprite _defaultSprite;
-    [SerializeField] private Sprite _frontView;
-    [SerializeField] private Sprite _backView;
-    [SerializeField] private RectTransform _rt;
+    [SerializeField] private Sprite _frontViewSprite;
+    [SerializeField] private Sprite _backViewSprite;
     [SerializeField] private float _flipDuration = 0.5f;
+    private RectTransform _rt;
     private bool _isShown = false;
     private DG.Tweening.Tween _flipTween;
     private Coroutine _downloadCoroutine;
@@ -27,6 +27,10 @@ public class Card : MonoBehaviour
     }
     public bool IsShown => _isShown;
 
+    private void Awake() {
+        _rt = GetComponent<RectTransform>();
+    }
+
     // Flipping the card by y-axis depending on isShown flag state. 
     public void Flip(System.Action callback = null) {
         _flipTween =  _rt.DORotate(new Vector3(0f, _isShown ? flipAngle : 0f, 0f), _flipDuration)
@@ -38,21 +42,7 @@ public class Card : MonoBehaviour
             _flipTween.onComplete = null;
         })
         .OnUpdate(() => {
-            // If card is shown at the moment
-            if (_isShown) {
-                if (_rt.eulerAngles.y > spriteChangeEdge) {
-                    _cardImage.sprite = _backView;
-                    _charImage.sprite = null;
-
-                    _flipTween.onUpdate = null;
-                }
-            } else {
-                if (_rt.eulerAngles.y < spriteChangeEdge) {
-                    _cardImage.sprite = _frontView;
-
-                    _flipTween.onUpdate = null;
-                }
-            }
+            CatchFlippingEdge();
         });
     }
 
@@ -90,6 +80,23 @@ public class Card : MonoBehaviour
         }
 
         _isShown = false;
+    }
+
+    private void CatchFlippingEdge() {
+        if (_isShown) {
+            if (_rt.eulerAngles.y > spriteChangeEdge) {
+                _cardImage.sprite = _backViewSprite;
+                _charImage.sprite = null;
+
+                _flipTween.onUpdate = null;
+            }
+        } else {
+            if (_rt.eulerAngles.y < spriteChangeEdge) {
+                _cardImage.sprite = _frontViewSprite;
+
+                _flipTween.onUpdate = null;
+            }
+        }
     }
 
     private void InterruptFlipping() {

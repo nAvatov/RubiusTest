@@ -135,13 +135,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f9752f324ac1e44787806d12e2aebb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cardImage: {fileID: 6580565885607394186}
-  charImage: {fileID: 6580565884577167502}
-  defaultSprite: {fileID: 21300000, guid: f7ab1edfd19cb1b408cfb9d1b5c359c3, type: 3}
-  frontView: {fileID: 21300000, guid: aa1d32629bca4944a9492f788885bc6d, type: 3}
-  backView: {fileID: 21300000, guid: 776cea45a4915084d8155f9fb0e42668, type: 3}
-  rt: {fileID: 6580565885607394187}
-  flipDuration: 0.5
+  _cardImage: {fileID: 6580565885607394186}
+  _charImage: {fileID: 6580565884577167502}
+  _defaultSprite: {fileID: 21300000, guid: f7ab1edfd19cb1b408cfb9d1b5c359c3, type: 3}
+  _frontViewSprite: {fileID: 21300000, guid: aa1d32629bca4944a9492f788885bc6d, type: 3}
+  _backViewSprite: {fileID: 21300000, guid: 776cea45a4915084d8155f9fb0e42668, type: 3}
+  _flipDuration: 0.5
 --- !u!1 &6580565884716051766
 GameObject:
   m_ObjectHideFlags: 0
@@ -187,7 +186,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6580565884716051766}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
   m_Name: 
